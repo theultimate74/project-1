@@ -1,0 +1,55 @@
+import os
+import hashlib
+import json
+
+# File to store the previous hash values
+HASH_STORE_FILE = "hash_store.json"
+
+def calculate_file_hash(filepath, hash_algo='sha256'):
+    """
+    Calculate the hash of a file using the given algorithm (default: SHA256).
+    Returns the hex digest string.
+    """
+    hash_func = hashlib.new(hash_algo)
+    try:
+        with open(filepath, 'rb') as f:
+            while chunk := f.read(8192):
+                hash_func.update(chunk)
+        return hash_func.hexdigest()
+    except FileNotFoundError:
+        return None
+
+def load_previous_hashes():
+    """
+    Load stored hash values from the JSON file.
+    Returns a dictionary of file paths and their hashes.
+    """
+    if os.path.exists(HASH_STORE_FILE):
+        with open(HASH_STORE_FILE, 'r') as f:
+            return json.load(f)
+    return {}
+
+def save_current_hashes(hash_dict):
+    """
+    Save current hash values to the JSON file.
+    """
+    with open(HASH_STORE_FILE, 'w') as f:
+        json.dump(hash_dict, f, indent=4)
+
+def scan_directory_for_hashes(directory):
+    """
+    Recursively scan a directory and calculate hashes for all files.
+    Returns a dictionary of file paths and their hash values.
+    """
+    file_hashes = {}
+    for root, _, files in os.walk(directory):
+        for filename in files:
+            full_path = os.path.join(root, filename)
+            file_hash = calculate_file_hash(full_path)
+            if file_hash:
+                file_hashes[full_path] = file_hash
+    return file_hashes
+
+def compare_hashes(old_hashes, new_hashes):
+    """
+    Compare old and new hash diction
